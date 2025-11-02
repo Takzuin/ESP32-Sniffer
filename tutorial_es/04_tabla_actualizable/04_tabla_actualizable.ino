@@ -24,6 +24,25 @@
 #include <WiFi.h>
 #include "esp_wifi.h"
 
+// Control remoto por Serial: 's' = stop, 'r' = reset
+bool takzuin_running = true;
+void handleSerialCommands() {
+  if (Serial.available()) {
+    char c = Serial.read();
+    if (c == 's' || c == 'S') {
+      takzuin_running = false;
+      Serial.println("⏸️  STOP: desactivando captura...");
+      esp_wifi_set_promiscuous_rx_cb(NULL);
+      esp_wifi_set_promiscuous(false);
+      Serial.println("✅ Captura detenida");
+    } else if (c == 'r' || c == 'R') {
+      Serial.println("🔁 Reiniciando (ESP.restart())...");
+      delay(100);
+      ESP.restart();
+    }
+  }
+}
+
 // ==========================================
 // ESTRUCTURA DE DATOS
 // ==========================================
@@ -224,6 +243,11 @@ void setup() {
 }
 
 void loop() {
+  handleSerialCommands();
+  if (!takzuin_running) {
+    delay(500);
+    return;
+  }
   unsigned long ahora = millis();
   
   // ==========================================
